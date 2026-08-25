@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="1位勝ち抜き式3人対戦トーナメントを自動生成し管理するツール。（カード型）">
+ 	<meta name="twitter:card" content="summary">
+    <meta property="og:title" content="3人制トーナメントマネージャー / 3-Player Tournament Manager">
+	<meta property="og:description" content="1位勝ち抜き式3人対戦トーナメントを自動生成し管理するツール。（カード型）">
+    <title>3人制トーナメントマネージャー / 3-Player Tournament Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* =====================================================
+           Base
+        ===================================================== */
+        body {
+            font-family: 'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc;
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+        }
+        h1, h2, h3, h4, header {
+            margin: 0;
+            padding:0;
+        }
+
+        header {
+            background-color: #0f172a; /* bg-slate-900 */
+            color: #ffffff;            /* text-white */
+            padding: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 30;
+            flex-shrink: 0;
+        }
+        
+        .site-icon-box {
+            background-color: #4f46e5; /* bg-indigo-600 */
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+        }
+        
+        #btnLoad {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.25rem;
+            border: 1px solid #334155; /* border border-slate-700 */
+            font-size: 0.875rem;
+            background-color: #1e293b; /* bg-slate-800 */
+            color: #cbd5e1; /* text-slate-300 */
+
+            /* アニメーション */
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); /* transition */
+            cursor: pointer;
+        }
+        #btnLoad:hover {
+            background-color: #334155; /* hover:bg-slate-700 */
+        }
+        
+        #btnSave {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.25rem;
+            border: none;
+            font-size: 0.875rem;
+            background-color: #4f46e5; /* bg-indigo-600 */
+            color: #ffffff;            /* text-white */
+
+            /* アニメーション・影 */
+            transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2), 
+                        0 4px 6px -4px rgba(99, 102, 241, 0.2);
+            cursor: pointer;
+        }
+
+        /* ホバー時 (disabledでない場合) */
+        #btnSave:hover:not(:disabled) {
+            background-color: #6366f1; /* hover:bg-indigo-500 */
+        }
+
+        /* 無効化時 */
+        #btnSave:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        aside {
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            width: 20rem;
+            background-color: #ffffff; /* bg-white */
+            border-right: 1px solid #e2e8f0; /* border-r border-slate-200 */
+            z-index: 20;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+                        0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* ===== 名前入力エリア ===== */
+        #countBadge {
+            background-color: #f1f5f9; /* slate-100 */
+            color: #64748b;            /* slate-500 */
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-family: ui-monospace, monospace;
+        }
+        #inputNames, #memo {
+            width: 100%;
+            height: 12rem;
+            padding: 0.75rem;
+            box-sizing: border-box; /* 幅にパディングを含める */
+
+            border: 1px solid #cbd5e1; /* border-slate-300 */
+            border-radius: 0.5rem;
+
+            font-size: 0.875rem;
+            font-family: ui-monospace, monospace;
+            line-height: 1.625;
+            outline: none;
+            resize: none;
+        }
+        /* フォーカス時の状態 */
+        #inputNames:focus, #memo:focus {
+            border-color: #6366f1; /* focus:border-indigo-500 */
+            box-shadow: 0 0 0 2px #6366f1; /* focus:ring-2 focus:ring-indigo-500 */
+        }
+        /* プレースホルダーの色 */
+        #inputNames::placeholder, #memo::placeholder {
+            color: #cbd5e1; /* placeholder:text-slate-300 */
+        }
+        
+        #statusMessage {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            border: 1px solid #ede9fe; /* border border-violet-100 */
+            background-color: #f5f3ff; /* bg-violet-50 */
+            color: #7c3aed; /* text-violet-700 */
+        }
+        
+        .side-btn {
+            width: 100%;
+            font-weight: bold;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-size: 1rem;
+        }
+
+        /* クリック時の動き (active:scale-[0.98]) */
+        .side-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* トーナメント生成ボタン (indigo-600) */
+        #btnGenerate {
+            background-color: #4f46e5; /* indigo-600 */
+            color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0.75rem;
+        }
+
+        #btnGenerate:hover {
+            background-color: #6366f1; /* hover:bg-indigo-500 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* リセットボタン (white / slate-200) */
+        #btnClear {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0; /* border-slate-200 */
+            color: #64748b; /* text-slate-500 */
+        }
+
+        #btnClear:hover {
+            background-color: #fff1f2; /* hover:bg-rose-50 */
+            border-color: #fecdd3; /* hover:border-rose-200 */
+            color: #e11d48; /* hover:text-rose-600 */
+        }
+        
+        .system-logic-container {
+            margin-top: 1rem;
+            border-top: 1px solid #f1f5f9; /* border-slate-100 */
+            padding-top: 0.25rem;
+        }
+
+        .system-logic-title {
+            margin: 0 0 0.75rem;
+            font-size: 10px;
+            font-weight: 700;
+            color: #94a3b8; /* text-slate-400 */
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .system-logic-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.75rem;
+            color: #64748b; /* text-slate-500 */
+        }
+
+        .logic-item {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-bottom: 0.625rem;
+        }
+
+        .logic-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .dot {
+            width: 0.375rem;
+            height: 0.375rem;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .dot-indigo {
+            background-color: #818cf8; /* bg-indigo-400 */
+        }
+        .dot-slate {
+            background-color: #94a3b8; /* bg-slate-400 */
+        }
+
+        .dot-orange {
+            background-color: #fb923c; /* bg-orange-400 */
+        }
+        
+        .bg-pattern {
+            position: absolute;
+            inset: 0;
+            opacity: 0.1;
+            pointer-events: none;
+            background-image: radial-gradient(#475569 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        
+        
+        #emptyState {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8; /* text-slate-400 */
+            z-index: 0;
+        }
+        
+        .emptyState-icon {
+          width: 8rem;
+          height: 8rem;
+          background-color: #ffffff;      /* bg-white */
+          border-radius: 1rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+          margin-bottom: 1.5rem;
+          border: 1px solid #f1f5f9;      /* border border-slate-100 */
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* ===== 基本カラー ===== */
+        .text-white { color: #ffffff; }
+        .text-slate-900 { color: #0f172a; }
+        .text-slate-800 { color: #1e293b; }
+        .text-slate-700 { color: #334155; }
+        .text-slate-600 { color: #475569; }
+        .text-slate-500 { color: #64748b; }
+        .text-slate-400 { color: #94a3b8; }
+        .text-slate-300 { color: #cbd5e1; }
+        .text-slate-200 { color: #e2e8f0; }
+        .text-violet-700 { color: #6d28d9; }
+        .text-orange-600 { color: #dd6b20; }
+        
+        /* ===== Layout / common UI ===== */
+        .app-shell { display: flex; flex-direction: column; height: 100vh; }
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .header-title { font-weight: 700; font-size: 1.125rem; letter-spacing: 0.025em; line-height: 1.25; }
+        .header-subtitle { font-size: 10px; color: #94a3b8; font-family: ui-monospace, monospace; }
+        .header-actions { display: flex; gap: 0.5rem; }
+        .content-layout { display: flex; flex: 1 1 0%; overflow: hidden; }
+        .sidebar-content { padding: 1.25rem; flex: 1 1 0%; overflow-y: auto; }
+        .form-block { margin-bottom: 0.5rem; }
+        .field-label { display: flex; justify-content: space-between; align-items: center; color: #334155; font-size: 0.875rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .field-label-main { display: flex; align-items: center; gap: 0.5rem; }
+        .checkbox-label { display: inline-flex; align-items: center; cursor: pointer; }
+        .checkbox-label input { accent-color: #2563eb; width: 1rem; height: 1rem; }
+        .checkbox-text { margin-left: 0.5rem; color: #374151; }
+        .status-icon { flex-shrink: 0; margin-top: 1px; }
+        .memo-block { margin-top: 0.5rem; }
+        .main-area { flex: 1 1 0%; background-color: #f8fafc; position: relative; overflow: hidden; }
+        .empty-state-title { font-size: 1.125rem; }
+        .empty-state-subtitle { font-size: 0.875rem; margin-top: 0.5rem; }
+
+        .placeholder-text { font-style: italic; font-size: 0.75rem; color: #94a3b8; }
+        .player-content { flex: 1; overflow: hidden; margin-right: 8px; }
+        .player-name-row { display: flex; align-items: center; }
+        .player-name-wrap { overflow: hidden; margin-right: 6px; }
+        .player-name { font-weight: 700; font-size: 0.875rem; }
+        .original-name { font-weight: 400; font-size: 0.6rem; }
+        .player-actions { display: flex; align-items: center; }
+        .player-actions .edit-btn { margin-left: 8px; }
+        .winner-mark { margin-left: 8px; }
+        .winner-mark.is-winner { color: #22c55e; }
+        .winner-mark.is-pending { color: #cbd5e1; }
+        .bye-name { flex: 1; }
+        .bye-item-card .edit-btn { margin-left: 8px; padding: 4px; }
+
+        /* =====================================================
+           Bracket Layout
+        ===================================================== */
+        .bracket-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 30px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        /* 各ラウンド */
+        .round-section {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            padding-bottom: 20px;
+            border-bottom: 2px dashed #e2e8f0;
+        }
+        .round-section:last-child {
+            border-bottom: none;
+        }
+
+        /* ラウンド見出し */
+        .round-header {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e293b;
+            border-bottom: 3px solid #6366f1;
+            display: inline-block;
+            padding-right: 20px;
+        }
+
+        /* =====================================================
+           Match Card
+        ===================================================== */
+        .match-list-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 10px;
+        }
+
+        .match-card {
+            width: 290px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            position: relative;
+            z-index: 10;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow:
+                0 2px 4px rgba(0,0,0,0.05),
+                0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .match-card:hover {
+            transform: translateY(-2px);
+            border-color: #cbd5e1;
+            box-shadow:
+                0 10px 15px -3px rgba(0,0,0,0.1),
+                0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+
+        /* 試合情報 */
+        .match-info {
+            display: flex;
+            padding: 3px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #334155;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 12px 12px 0 0;
+            align-items: center;
+        }
+        
+        .match-title { flex-shrink: 0; }
+        .match-memo {
+            width: 132px;
+            margin-left: auto;
+            padding: 1px 4px;
+            box-sizing: border-box;
+            border: 1px solid #f8fafc;
+            border-radius: 4px;
+            background: #f8fafc;
+            color: #334155;
+            font: inherit;
+            font-size: 0.75rem;
+            font-weight: 400;
+            text-align: right;
+            outline: none;
+        }
+        .match-memo:hover {
+            background: #ffffff;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 1px #6366f1;
+        }
+        .match-memo:focus {
+            background: #ffffff;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 1px #6366f1;
+        }
+        .match-memo::placeholder { color: #94a3b8; }
+
+        /* =====================================================
+           Player Slot
+        ===================================================== */
+        .player-slot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 32px;
+            padding: 8px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.15s;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .player-slot:last-of-type {
+            border-bottom: none;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .player-slot:hover:not(.empty):not(.bye) {
+            background-color: #f8fafc;
+        }
+
+        /* 状態 */
+        .player-slot.empty {
+            color: #cbd5e1;
+            cursor: default;
+        }
+
+        .player-slot.winner {
+            background-color: #f0fdf4;
+            color: #15803d;
+            font-weight: 600;
+        }
+        .player-slot.winner::before {
+            content: '';
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 4px;
+            background-color: #22c55e;
+        }
+
+        /* 編集ボタン */
+        .edit-btn {
+            opacity: 0;
+            padding: 4px;
+            border-radius: 4px;
+            color: #94a3b8;
+            transition: opacity 0.2s;
+            cursor: pointer;
+            border: 0;
+            background-color:transparent;
+        }
+        .bye-item-card .edit-btn {
+            opacity: 0.3;
+        }
+        .player-slot:hover .edit-btn, .bye-item-card:hover .edit-btn {
+            opacity: 1;
+        }
+        .edit-btn:hover {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+
+        /* =====================================================
+           Tags
+        ===================================================== */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            flex-shrink: 0;
+            padding: 2px 6px;
+
+            font-size: 0.65rem;
+            font-weight: 700;
+            line-height: 1;
+
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .tag + .tag {
+            margin-left: 6px;
+        }
+        .tag-clone {
+            background: #ede9fe; /* Violet-100 */
+            color: #7c3aed; /* Violet-600 */
+        }
+        .tag-sub {
+            background: #ffedd5; /* Orange-100 */
+            color: #c2410c; /* Orange-700 */
+        }
+
+        /* =====================================================
+           Bye（シード）
+        ===================================================== */
+        .bye-details {
+            margin-top: 15px;
+            padding: 12px 16px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            border: 1px dashed #cbd5e1;
+        }
+
+        .bye-details summary {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            outline: none;
+            user-select: none;
+        }
+
+        .bye-list-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .bye-item-card {
+            padding: 4px 8px;
+            background: #ffffff;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #475569;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        /* =====================================================
+           Champion Animation
+        ===================================================== */
+        @keyframes popIn {
+            0% {
+                transform: scale(0.85);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes shine {
+            100% {
+                left: 125%;
+            }
+        }
+
+        /* =====================================================
+           Champion Layout
+        ===================================================== */
+        .champion-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 50px;
+            margin-bottom: 50px;
+
+            perspective: 1000px;
+        }
+
+        /* =====================================================
+           Champion Card
+        ===================================================== */
+        .champion-card {
+            width: 340px;
+            padding: 28px;
+
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+
+            background: linear-gradient(
+                135deg,
+                #fff8dc 0%,
+                #fde68a 40%,
+                #fbbf24 100%
+            );
+
+            border: 2px solid rgba(251, 191, 36, 0.6);
+            border-radius: 16px;
+
+            box-shadow:
+                0 10px 25px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+            animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+            transform-style: preserve-3d;
+            transition:
+                transform 0.25s ease,
+                box-shadow 0.25s ease;
+        }
+
+        .champion-card:hover {
+            transform: translateY(-6px) rotateX(4deg);
+            box-shadow:
+                0 18px 36px rgba(0, 0, 0, 0.22),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        /* Shine Effect */
+        .champion-card::before {
+            content: "";
+            position: absolute;
+
+            top: 0;
+            left: -80%;
+
+            width: 50%;
+            height: 100%;
+
+            background: linear-gradient(
+                120deg,
+                transparent,
+                rgba(255, 255, 255, 0.6),
+                transparent
+            );
+
+            transform: skewX(-25deg);
+            pointer-events: none;
+        }
+
+        .champion-card:hover::before {
+            animation: shine 0.9s ease;
+        }
+
+        /* =====================================================
+           Icon
+        ===================================================== */
+        .champion-icon {
+            color: #f59e0b;
+            margin-bottom: 10px;
+
+            display: flex;
+            justify-content: center;
+        }
+
+        /* =====================================================
+           Label
+        ===================================================== */
+        .champion-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+
+            color: #92400e;
+            letter-spacing: 0.15em;
+
+            margin-bottom: 6px;
+        }
+
+        /* =====================================================
+           Name
+        ===================================================== */
+        .champion-name {
+            font-weight: 700;
+            font-size: 1.4rem;
+
+            color: #78350f;
+        }
+
+        .champion-name::after {
+            content: "";
+            display: block;
+
+            width: 50px;
+            height: 3px;
+
+            background: #b45309;
+
+            margin: 8px auto 0;
+            border-radius: 2px;
+        }
+
+        /* =====================================================
+           Tags Area
+        ===================================================== */
+        .champion-tags {
+            margin-top: 6px;
+
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* Champion専用タグ装飾 */
+        .champion-tags .tag {
+            box-shadow:
+                0 2px 4px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .champion-tags .tag-clone {
+            background: linear-gradient(145deg, #ede9fe, #ddd6fe);
+            color: #6d28d9;
+        }
+
+        .champion-tags .tag-sub {
+            background: linear-gradient(145deg, #ffedd5, #fed7aa);
+            color: #c2410c;
+        }
+
+        
+
+    </style>
+</head>
+<body>
+
+    <div class="app-shell">
+        <!-- Header -->
+        <header>
+            <div class="header-brand">
+                <div class="site-icon-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <g transform="rotate(0 12 12)">
+                        <circle cx="12" cy="7" r="3" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="7" cy="17" r="3" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="17" cy="17" r="3" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 10V14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M12 14L8.5 15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M12 14L15.5 15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </g>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="header-title">3-Player Tournament Manager</h1>
+                    <div class="header-subtitle">3人制トーナメント管理ツール</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <input type="file" id="fileInput" accept=".json" class="hidden">
+                <button onclick="document.getElementById('fileInput').click()"  id="btnLoad">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    読込
+                </button>
+                <button id="btnSave" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    保存
+                </button>
+            </div>
+        </header>
+
+        <div class="content-layout">
+            <!-- Sidebar -->
+            <aside>
+                <div class="sidebar-content">
+                    <div class="form-block">
+                        <label class="field-label">
+                            <span class="field-label-main">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                参加者リスト
+                            </span>
+                            <span id="countBadge">0名</span>
+                        </label>
+                        <textarea id="inputNames" 
+                            placeholder="一行に一人ずつ名前を入力&#10;Aさん&#10;Bさん&#10;Cさん..."></textarea>
+                    </div>
+                    
+                    <div class="form-block">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="isShuffle">
+                            <span class="checkbox-text">シャッフル</span>
+                        </label>
+                    </div>
+                    
+                    <div id="statusMessage" class="hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="status-icon"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <span id="statusText"></span>
+                    </div>
+
+                    <button id="btnGenerate" class="side-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        トーナメント生成
+                    </button>
+                    <button id="btnClear" class="side-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        リセット
+                    </button>
+
+                    <div class="memo-block">
+                        <textarea id="memo" placeholder="メモ欄"></textarea>
+                    </div>
+
+                    <div class="system-logic-container">
+                        <h4 class="system-logic-title">SYSTEM</h4>
+                        <ul class="system-logic-list">
+                            <li class="logic-item">
+                                <span class="dot dot-slate"></span>
+                                <span>長押しで1人の勝者を選択</span>
+                            </li>
+                            <li class="logic-item">
+                                <span class="dot dot-orange"></span>
+                                <span>名前の途中変更に対応</span>
+                            </li>
+                            <li class="logic-item">
+                                <span class="dot dot-slate"></span>
+                                <span>ローカルストレージに自動保存</span>
+                            </li>
+                            <li class="logic-item">
+                                <span class="dot dot-slate"></span>
+                                <span>ファイル保存・読み込み可能</span>
+                            </li>
+                            <li class="logic-item">
+                                <span class="dot dot-slate"></span>
+                                <span>2人対戦を完全排除 (3人1組)</span>
+                            </li>
+                            <li class="logic-item">
+                                <span class="dot dot-indigo"></span>
+                                <span>偶数時は「分身」で奇数化</span>
+                            </li>
+                            <li class="logic-item">
+                                <span class="dot dot-slate"></span>
+                                <span>2ラウンド目に3のべき乗(3,9,27...)へ自動調整</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+            </aside>
+
+            <!-- Main Area -->
+            <main class="main-area">
+                <!-- Background Pattern -->
+                <div class="bg-pattern"></div>
+
+                <!-- Empty State -->
+                <div id="emptyState">
+                    <div class="emptyState-icon">
+                        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-slate-200">
+                            <path d="M16 21V19C16 17.9 15.1 17 14 17H5C3.9 17 3 17.9 3 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="9.5" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M22 21V19C22 17.9 21.1 17 20 17H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 3.13C16.8604 3.35031 17.623 3.81886 18.2155 4.49256C18.808 5.16626 19.2117 6.02409 19.3896 6.98619C19.5675 7.94828 19.5139 8.98455 19.2339 9.99863C18.954 11.0127 18.4566 11.9723 17.787 12.788" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="empty-state-title text-slate-500">参加者を入力して生成ボタンを押してください</div>
+                    <div class="empty-state-subtitle">最低3名からトーナメントを作成できます</div>
+                </div>
+
+                <!-- Bracket Container -->
+                <div id="bracketContainer" class="bracket-container hidden">
+                    <!-- Javascript populates this -->
+                </div>
+            </main>
+        </div>
+    </div>
+    <!-- version 3 -->
+    <script type="module">
+	(function() {
+        // --- Constants & Global State ---
+        let tournamentData = null; // { rounds: [], info: {}, winner: null }
+
+        // --- DOM Elements ---
+        const els = {
+            input: document.getElementById('inputNames'),
+            inputMemo: document.getElementById('memo'),
+            countBadge: document.getElementById('countBadge'),
+            btnGenerate: document.getElementById('btnGenerate'),
+            btnClear: document.getElementById('btnClear'),
+            container: document.getElementById('bracketContainer'),
+            empty: document.getElementById('emptyState'),
+            statusMsg: document.getElementById('statusMessage'),
+            statusText: document.getElementById('statusText'),
+            btnSave: document.getElementById('btnSave'),
+            fileInput: document.getElementById('fileInput'),
+            isShuffle: document.getElementById('isShuffle')
+        };
+
+        // --- Utils ---
+        function shuffle(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+        
+        const sanitize = (str) => {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/`/g, '&#x60;');
+        };
+        
+        const getTargetPowerOf3 = (n) => {
+            if (n < 1) return 0;
+            let p = 1;
+            while (p * 3 <= n) p *= 3;
+            return p;
+        };
+
+        const isPowerOf3 = (n) => {
+            let p = 1;
+            while (p < n) p *= 3;
+            return p === n;
+        };
+
+        // --- Core Logic: Structure Generation ---
+
+        function generateStructure(rawNames) {
+            let players = rawNames.map(n => ({ 
+                name: n, 
+                isClone: false, 
+                isSubstitute: false, // 代理フラグ
+                originalName: n, // 元の名前
+                id: crypto.randomUUID() 
+            }));
+
+            // シャッフル
+            if (els.isShuffle.checked) players = shuffle(players);
+            const nameLines = players.map(item => item.originalName).join("\n");
+            const memo = els.inputMemo.value;
+            // 1. 偶数なら分身を作成して奇数にする
+            let message = "";
+            if (players.length % 2 === 0) {
+                const original = players[0];
+                const clone = { 
+                    name: original.name, 
+                    isClone: true,
+                    isSubstitute: false,
+                    originalName: original.name,
+                    id: crypto.randomUUID() 
+                };
+                players.push(clone);
+                message = `参加者が偶数(${rawNames.length}名)のため、"${original.name}"の分身を作成して計${players.length}名で開始します。`;
+            }
+
+            // ラウンド構築用変数
+            let currentPlayers = players.map(p => ({ ...p, sourceMatch: null }));
+            const rounds = [];
+            let roundCount = 1;
+
+            // 2. 優勝者(1名)が決まるまでループ
+            while (currentPlayers.length > 1) {
+                const N = currentPlayers.length;
+                let matchCount = 0;
+                let byeCount = 0;
+
+                // ロジック: 現在人数Nを、次の3のべき乗Tまで減らす
+                // 事前のチェックで3人以上
+                if (isPowerOf3(N)) {
+                    matchCount = N / 3;
+                    byeCount = 0;
+                } else {
+                    const target = getTargetPowerOf3(N); // 引数を超えない範囲で、3の累乗の中で最も大きい数字を返す(奇数を返す)
+                    const diff = N - target; // Nは調整されて奇数なので引けば偶数になる
+                    matchCount = diff / 2; // つまり割り切れる
+                    byeCount = N - (matchCount * 3);
+                }
+
+                const roundMatches = [];
+                let pIdx = 0;
+
+                // 対戦枠
+                for (let i = 0; i < matchCount; i++) {
+                    const matchId = `r${roundCount}m${i + 1}`;
+                    const p1 = currentPlayers[pIdx++];
+                    const p2 = currentPlayers[pIdx++];
+                    const p3 = currentPlayers[pIdx++];
+                    
+                    roundMatches.push({
+                        id: matchId,
+                        roundNumber: roundCount,
+                        matchNumber: i + 1,
+                        players: [p1, p2, p3],
+                        winner: null,
+                        memo: ''
+                    });
+                }
+
+                // 勝ち上がり予定枠
+                const matchWinners = roundMatches.map((m, matchIndex) => ({
+                    name: null,
+                    isClone: false,
+                    isSubstitute: false,
+                    id: null,
+                    sourceMatch: {
+                        id: m.id,
+                        roundNumber: roundCount,
+                        matchNumber: matchIndex + 1
+                    },
+                    isWinnerPlaceholder: true
+                }));
+
+                // シード選手
+                const byePlayers = [];
+                for (let i = 0; i < byeCount; i++) {
+                    const byePlayer = currentPlayers[pIdx++];
+                    byePlayers.push({
+                        ...byePlayer
+                    });
+                }
+
+                // シード選手と勝者を分散配置
+                const nextRoundPlayers = interleavePlayers_SeedFirst(matchWinners, byePlayers);
+                
+                rounds.push({
+                    id: roundCount,
+                    matches: roundMatches,
+                    byes: byePlayers
+                });
+
+                currentPlayers = nextRoundPlayers;
+                roundCount++;
+            }
+
+            return { schemaVersion: 3, nameLines, memo, rounds, message, winner: null };
+        }
+
+        // 強豪(シード)分散配置
+        function interleavePlayers_SeedFirst(matchWinners, byePlayers) {
+            const nextRoundPlayers = [];
+            const total = matchWinners.length + byePlayers.length;
+            
+            if (byePlayers.length === 0) return [...matchWinners];
+            if (matchWinners.length === 0) return [...byePlayers];
+            
+            const interval = total / byePlayers.length;
+            let matchIdx = 0;
+            let byeIdx = 0;
+            
+            for (let i = 0; i < total; i++) {
+                const shouldPlaceSeed = Math.floor(i / interval) === byeIdx && byeIdx < byePlayers.length;
+                if (shouldPlaceSeed) {
+                    nextRoundPlayers.push(byePlayers[byeIdx++]);
+                } else if (matchIdx < matchWinners.length) {
+                    nextRoundPlayers.push(matchWinners[matchIdx++]);
+                }
+            }
+            return nextRoundPlayers;
+        }
+
+        // --- Interaction Logic ---
+
+        // 勝者決定クリック
+        function handleMatchClick(roundIndex, matchIndex, playerIndex, event) {
+            // 編集ボタンクリック時は発火させない
+            if (event.target.closest('.edit-btn')) return;
+
+            const round = tournamentData.rounds[roundIndex];
+            const match = round.matches[matchIndex];
+            const clickedPlayer = match.players[playerIndex];
+
+            // プレースホルダーをクリックしても反応しない
+            if (clickedPlayer.isWinnerPlaceholder) return;
+
+            // Toggle Winner
+            if (match.winner && match.winner.id === clickedPlayer.id) {
+                match.winner = null;
+            } else {
+                match.winner = clickedPlayer;
+            }
+
+            updateBracketState();
+            renderBracket();
+            saveState();
+        }
+
+        // 代理入力（名前変更）
+        function handleSubstitute(roundIndex, matchIndex, playerIndex, event) {
+            event.stopPropagation(); // 勝者選択を発火させない
+
+            const round = tournamentData.rounds[roundIndex];
+            const match = round.matches[matchIndex];
+            const player = match.players[playerIndex];
+
+            // プレースホルダーは編集不可
+            if (player.isWinnerPlaceholder) return;
+
+            let newName = prompt(`「${player.originalName}」の変更後の名前を入力してください:`, player.name);
+            
+            if (newName === null) return; // ユーザーがキャンセルした場合
+            
+            newName = newName.trim();
+
+            if (newName !== player.name) {
+                const oldId = player.id;
+                
+                newName = newName == "" ? player.originalName : newName;
+
+                const isSameName = newName === player.originalName;
+
+                // オブジェクトのプロパティを更新（参照渡しを利用して全体に反映）
+                // ただし、IDは維持し、表示名とフラグを変える
+                // ここでは再帰的に全ラウンドの同一IDのプレイヤー情報を書き換える処理を行う
+                updatePlayerInfoGlobally(oldId, newName, isSameName);
+                
+                renderBracket();
+                saveState();
+            }
+        }
+
+        function updatePlayerInfoGlobally(playerId, newName, isSameName = false) {
+            // 全ラウンドのマッチとByeを走査して名前を更新
+            tournamentData.rounds.forEach(round => {
+                // Matches
+                round.matches.forEach(match => {
+                    match.players.forEach(p => {
+                        if (p.id === playerId) {
+                            p.name = newName;
+                            p.isSubstitute = !isSameName;
+                        }
+                    });
+                    if (match.winner && match.winner.id === playerId) {
+                        match.winner.name = newName;
+                        match.winner.isSubstitute = !isSameName;
+                    }
+                });
+                // Byes
+                if (round.byes) {
+                    round.byes.forEach(p => {
+                        if (p.id === playerId) {
+                            p.name = newName;
+                            p.isSubstitute = !isSameName;
+                        }
+                    });
+                }
+            });
+            // 最終勝者もチェック
+            if (tournamentData.winner && tournamentData.winner.id === playerId) {
+                tournamentData.winner.name = newName;
+                tournamentData.winner.isSubstitute = !isSameName;
+            }
+        }
+
+        function updateBracketState() {
+            for (let r = 0; r < tournamentData.rounds.length - 1; r++) {
+                const currentRound = tournamentData.rounds[r];
+                const nextRound = tournamentData.rounds[r + 1];
+
+                currentRound.matches.forEach(match => {
+                    if (!match.winner) {
+                        clearNextRoundSlot(nextRound, match);
+                        return;
+                    }
+                    fillNextRoundSlot(nextRound, match, match.winner);
+                });
+            }
+            
+            // 最終勝者判定
+            const lastRound = tournamentData.rounds[tournamentData.rounds.length - 1];
+            if (lastRound.matches.length === 1 && lastRound.matches[0].winner) {
+                tournamentData.winner = lastRound.matches[0].winner;
+            } else {
+                tournamentData.winner = null;
+            }
+        }
+
+        function isFromMatch(player, matchId) {
+            return player?.sourceMatch?.id === matchId;
+        }
+
+        function createSourceMatchRef(match) {
+            return {
+                id: match.id,
+                roundNumber: match.roundNumber,
+                matchNumber: match.matchNumber
+            };
+        }
+
+        function fillNextRoundSlot(nextRound, sourceMatch, winner) {
+            for (const m of nextRound.matches) {
+                for (let i = 0; i < 3; i++) {
+                    if (isFromMatch(m.players[i], sourceMatch.id)) {
+                        m.players[i] = {
+                            ...winner,
+                            sourceMatch: createSourceMatchRef(sourceMatch),
+                            isWinnerPlaceholder: false
+                        };
+                        if (m.winner && isFromMatch(m.winner, sourceMatch.id) && m.winner.id !== winner.id) {
+                            m.winner = null;
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+
+        function clearNextRoundSlot(nextRound, sourceMatch) {
+            for (const m of nextRound.matches) {
+                for (let i = 0; i < 3; i++) {
+                    if (isFromMatch(m.players[i], sourceMatch.id)) {
+                        const wasWinner = m.winner && isFromMatch(m.winner, sourceMatch.id);
+                        m.players[i] = {
+                            name: null,
+                            id: null,
+                            isClone: false,
+                            isSubstitute: false,
+                            sourceMatch: createSourceMatchRef(sourceMatch),
+                            isWinnerPlaceholder: true
+                        };
+                        if (wasWinner) m.winner = null;
+                        return;
+                    }
+                }
+            }
+        }
+
+        // --- UI Rendering ---
+        function renderBracket() {
+            if (!tournamentData) return;
+            const container = els.container;
+            container.innerHTML = '';
+            els.empty.classList.add('hidden');
+            els.container.classList.remove('hidden');
+
+            // Status Message
+            if (tournamentData.message) {
+                els.statusText.textContent = tournamentData.message;
+                els.statusMsg.classList.remove('hidden');
+            } else {
+                els.statusMsg.classList.add('hidden');
+            }
+            els.input.value = tournamentData.nameLines;
+            els.countBadge.textContent = `${tournamentData.nameLines.split('\n').length}名`;
+
+            // 各ラウンドをループ
+            tournamentData.rounds.forEach((round, rIdx) => {
+                const section = document.createElement('div');
+                section.className = 'round-section'; // 縦に並ぶセクション
+                
+                const isFinal = rIdx === tournamentData.rounds.length - 1;
+                const header = document.createElement('div');
+                header.className = 'round-header';
+                header.textContent = isFinal ? 'FINAL' : `ROUND ${rIdx + 1}`;
+                section.appendChild(header);
+
+                // マッチカードの横並びコンテナ
+                const matchList = document.createElement('div');
+                matchList.className = 'match-list-wrapper';
+
+                round.matches.forEach((match, mIdx) => {
+                    const card = document.createElement('div');
+                    card.className = 'match-card'; // 既存のスタイルを利用
+                    
+                    const info = document.createElement('div');
+                    info.className = 'match-info';
+
+                    const matchTitle = document.createElement('span');
+                    matchTitle.className = 'match-title';
+                    matchTitle.textContent = `MATCH ${rIdx + 1}-${mIdx + 1}`;
+
+                    const matchMemo = document.createElement('input');
+                    matchMemo.type = 'text';
+                    matchMemo.className = 'match-memo';
+                    matchMemo.title = 'メモ';
+                    matchMemo.setAttribute('maxlength', '20')
+                    matchMemo.value = match.memo ?? '';
+                    matchMemo.setAttribute('aria-label', `MATCH ${rIdx + 1}-${mIdx + 1} メモ`);
+                    matchMemo.addEventListener('input', () => {
+                        match.memo = matchMemo.value;
+                        saveState();
+                    });
+
+                    info.append(matchTitle, matchMemo);
+                    card.appendChild(info);
+
+                    match.players.forEach((p, pIdx) => {
+                        const slot = document.createElement('div');
+                        const isPlaceholder = p.isWinnerPlaceholder;
+                        const isWinner = match.winner && match.winner.id === p.id;
+                        
+                        let slotClass = 'player-slot';
+                        if (isWinner) slotClass += ' winner';
+                        if (isPlaceholder) slotClass += ' empty';
+                        slot.className = slotClass;
+
+                        let nameHtml = '';
+                        if (isPlaceholder) {
+                            let waitText = '対戦待ち...';
+                            if (p.sourceMatch) {
+                                waitText = `Winner of Match ${p.sourceMatch.roundNumber}-${p.sourceMatch.matchNumber}`;
+                            }
+                            nameHtml = `<span class="placeholder-text">${waitText}</span>`;
+                        } else {
+                            let tags = '';
+                            if (p.isSubstitute) tags += `<span class="tag tag-sub">変更</span>`;
+                            if (p.isClone) tags += `<span class="tag tag-clone">分身</span>`;
+                            let nameColor = p.isSubstitute ? 'text-orange-600' : (p.isClone ? 'text-violet-700' : 'text-slate-700');
+                            let origName = p.isSubstitute ? `<div class="truncate text-slate-500 original-name">${sanitize(p.originalName)}</div>` : "";
+                            nameHtml = `<div class="player-name-row"><div class="player-name-wrap"><div class="truncate ${nameColor} player-name">${sanitize(p.name)}</div>${origName}</div>${tags}</div>`;
+                        }
+
+                        let rightAction = '';
+                        if (!isPlaceholder) {
+                            const editBtn = `<button type="button" class="edit-btn" title="名前を変更"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>`;
+                            const checkIcon = isWinner ? `<span class="winner-mark is-winner">●</span>` : `<span class="winner-mark is-pending">〇</span>`;
+                            rightAction = `<div class="player-actions">${editBtn}${checkIcon}</div>`;
+                        }
+
+                        slot.innerHTML = `<div class="player-content">${nameHtml}</div>${rightAction}`;
+
+                        if (!isPlaceholder) {
+                            let longPressTimeout = null;
+                            const longPressTime = 300; // 約0.3秒後に勝者選択を発火
+                            slot.addEventListener('touchstart', (e) => {
+                                if (e.touches.length === 1) { // 単一のタッチで実行
+                                    longPressTimeout = setTimeout(() => {
+                                        handleMatchClick(rIdx, mIdx, pIdx, e);
+                                    }, longPressTime);
+                                }
+                            });
+                            slot.addEventListener('mousedown', (e) => {
+                                longPressTimeout = setTimeout(() => {
+                                    handleMatchClick(rIdx, mIdx, pIdx, e);
+                                }, longPressTime);
+                            });
+                            slot.addEventListener('touchend', (e) => {
+                                clearTimeout(longPressTimeout);
+                            });
+                            slot.addEventListener('mouseup', (e) => {
+                                clearTimeout(longPressTimeout);
+                            });
+                            const btn = slot.querySelector('.edit-btn');
+                            if(btn) {
+                                btn.addEventListener('click', (e) => {
+                                    handleSubstitute(rIdx, mIdx, pIdx, e);
+                                });
+                            }
+                        }
+                        card.appendChild(slot);
+                    });
+                    matchList.appendChild(card);
+                });
+                section.appendChild(matchList);
+
+                // Byesの横並びコンテナ
+                if (round.byes && round.byes.length > 0) {
+                    const details = document.createElement('details');
+                    details.className = 'bye-details';
+
+                    const summary = document.createElement('summary');
+                    summary.textContent = `次ラウンド進出（シード） (${round.byes.length}名)`;
+                    details.appendChild(summary);
+
+                    const byeWrapper = document.createElement('div');
+                    byeWrapper.className = 'bye-list-wrapper';
+
+                    round.byes.forEach(p => {
+                        const byeRow = document.createElement('div');
+                        byeRow.className = 'bye-item-card';
+                        
+                        let tags = '';
+                        if (p.isSubstitute) tags += `<span class="tag tag-sub">変更</span>`;
+                        if (p.isClone) tags += `<span class="tag tag-clone">分身</span>`;
+                        let origName = p.isSubstitute ? `<span class="text-slate-500 original-name">${sanitize(p.originalName)}</span>` : "";
+                        
+                        byeRow.innerHTML = `
+                            <span class="bye-name">${sanitize(p.name)} ${origName + tags}</span>
+                            <button type="button" class="edit-btn"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
+                        `;
+                        
+                        const btn = byeRow.querySelector('.edit-btn');
+                        if (btn) {
+                            btn.addEventListener('click', () => {
+                                let newName = prompt(`「${p.originalName}」の変更後の名前を入力してください:`, p.name);
+                                if (newName === null) return; // ユーザーがキャンセルした場合
+                                newName = newName.trim();
+                                if (newName !== p.name) {
+                                    newName = newName == "" ? p.originalName : newName;
+                                    const isSameName = newName === p.originalName;
+                                    updatePlayerInfoGlobally(p.id, newName, isSameName);
+                                    renderBracket();
+                                    saveState();
+                                }
+                            });
+                        }
+                        byeWrapper.appendChild(byeRow);
+                    });
+                    details.appendChild(byeWrapper);
+                    section.appendChild(details);
+                }
+
+                // 最終勝者の表示
+                if (isFinal && tournamentData.winner) {
+                    const w = tournamentData.winner;
+                    const champContainer = document.createElement('div');
+                    champContainer.className = 'champion-wrapper';
+                    
+                    const champ = document.createElement('div');
+                    champ.className = 'champion-card'; // 既存のスタイル
+                    
+                    let tags = '';
+                    if (w.isSubstitute) tags += `<span class="tag tag-sub">変更</span>`;
+                    if (w.isClone) tags += `<span class="tag tag-clone">分身</span>`;
+                    
+                    champ.innerHTML = `
+                        <div class="champion-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5ZM19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>
+                        </div>
+                        <div class="champion-label">CHAMPION</div>
+                        <div class="champion-name">${sanitize(w.name)}</div>
+                        <div class="champion-tags">${tags}</div>
+                    `;
+                    champContainer.appendChild(champ);
+                    section.appendChild(champContainer);
+                }
+
+                container.appendChild(section);
+            });
+        }
+        // --- Event Listeners & State Management ---
+
+        els.input.addEventListener('input', () => {
+            const lines = els.input.value.split('\n').filter(l => l.trim());
+            els.countBadge.textContent = `${lines.length}名`;
+        });
+
+        els.btnGenerate.addEventListener('click', () => {
+            const lines = els.input.value.split('\n').map(l => l.trim()).filter(l => l);
+            if (lines.length < 3) {
+                alert('最低3名の参加者が必要です');
+                return;
+            }
+            if (confirm('現在の入力を基に新しいトーナメントを生成しますか？\n（現在の進行状況はリセットされます）')) {
+                tournamentData = generateStructure(lines);
+                saveState();
+                renderBracket();
+                enableSaveBtn();
+            }
+        });
+        els.inputMemo.addEventListener('input', () => {
+            if (!tournamentData) return;
+            tournamentData.memo = els.inputMemo.value;
+            saveState();
+        });
+        const STORAGE_KEY = "3-player-tournament-manager-v3";
+        const SCHEMA_VERSION = 3;
+
+        function normalizeTournamentData(data) {
+            if (!data || typeof data !== 'object' || Array.isArray(data)
+                || data.schemaVersion !== SCHEMA_VERSION
+                || !Array.isArray(data.rounds) || data.rounds.length === 0) {
+                throw new Error('Invalid tournament data');
+            }
+
+            // 元のオブジェクトを変更せず、他ツール固有の未知フィールドも保持する。
+            const imported = JSON.parse(JSON.stringify(data));
+            const matchIds = new Set();
+
+            imported.rounds = imported.rounds.map((round, roundIndex) => {
+                if (!round || typeof round !== 'object'
+                    || !Array.isArray(round.matches) || round.matches.length === 0) {
+                    throw new Error('Invalid round data');
+                }
+
+                const matches = round.matches.map((match, matchIndex) => {
+                    if (!match || typeof match !== 'object'
+                        || typeof match.id !== 'string' || !match.id
+                        || matchIds.has(match.id)
+                        || !Array.isArray(match.players) || match.players.length !== 3
+                        || match.players.some(player => !player || typeof player !== 'object')
+                        || (match.winner !== null && match.winner !== undefined
+                            && typeof match.winner !== 'object')) {
+                        throw new Error('Invalid match data');
+                    }
+                    matchIds.add(match.id);
+                    return {
+                        ...match,
+                        roundNumber: Number(match.roundNumber) || roundIndex + 1,
+                        matchNumber: Number(match.matchNumber) || matchIndex + 1,
+                        winner: match.winner ?? null,
+                        memo: typeof match.memo === 'string' ? match.memo : ''
+                    };
+                });
+
+                const byes = round.byes === undefined ? [] : round.byes;
+                if (!Array.isArray(byes)
+                    || byes.some(player => !player || typeof player !== 'object')) {
+                    throw new Error('Invalid bye data');
+                }
+
+                return { ...round, id: round.id ?? roundIndex + 1, matches, byes };
+            });
+
+            const firstRoundPlayers = [
+                ...imported.rounds[0].matches.flatMap(match => match.players),
+                ...imported.rounds[0].byes
+            ];
+            if (firstRoundPlayers.some(player => player.isWinnerPlaceholder
+                || typeof player.id !== 'string' || !player.id)) {
+                throw new Error('Invalid first round players');
+            }
+
+            const seenPlayerIds = new Set();
+            const originalPlayers = firstRoundPlayers
+                .filter(player => !player.isClone && !seenPlayerIds.has(player.id) && seenPlayerIds.add(player.id));
+            if (originalPlayers.length < 3) throw new Error('Too few players');
+
+            return {
+                ...imported,
+                schemaVersion: SCHEMA_VERSION,
+                nameLines: typeof imported.nameLines === 'string' && imported.nameLines.trim()
+                    ? imported.nameLines
+                    : originalPlayers.map(player => {
+                        const name = typeof player.originalName === 'string' && player.originalName.trim()
+                            ? player.originalName : player.name;
+                        return typeof name === 'string' ? name.trim() : '';
+                    }).filter(Boolean).join('\n'),
+                memo: typeof imported.memo === 'string' ? imported.memo : '',
+                message: typeof imported.message === 'string' ? imported.message : '',
+                winner: imported.winner && typeof imported.winner === 'object' ? imported.winner : null
+            };
+        }
+
+        function saveState() {
+            if (!tournamentData) return;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(tournamentData));
+        }
+
+        function loadState() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) {
+                try {
+                    tournamentData = normalizeTournamentData(JSON.parse(data));
+                    updateBracketState();
+                    els.inputMemo.value = tournamentData.memo ?? '';
+                    renderBracket();
+                    enableSaveBtn();
+                } catch (e) {
+                    console.error("Load error", e);
+                }
+            }
+        }
+
+        function enableSaveBtn() {
+            els.btnSave.disabled = false;
+        }
+
+        els.btnClear.addEventListener('click', () => {
+            if(confirm('全てのデータをクリアしますか？')) {
+                localStorage.removeItem(STORAGE_KEY);
+                tournamentData = null;
+                els.empty.classList.remove('hidden');
+                els.container.classList.add('hidden');
+                els.statusMsg.classList.add('hidden');
+                els.input.value = '';
+                els.inputMemo.value = '';
+                els.countBadge.textContent = '0名';
+                els.btnSave.disabled = true;
+            }
+        });
+
+        els.btnSave.addEventListener('click', () => {
+            if (!tournamentData) return;
+            const { players: _players, ...exportData } = tournamentData;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `3p_tournament_manager_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        });
+
+        els.fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.addEventListener('load', (event) => {
+                try {
+                    tournamentData = normalizeTournamentData(JSON.parse(event.target.result));
+                    updateBracketState();
+                    els.inputMemo.value = tournamentData.memo ?? '';
+                    renderBracket();
+                    saveState();
+                    enableSaveBtn();
+                } catch(err) {
+                    alert('ファイルの読み込みに失敗しました');
+                }
+            });
+            reader.readAsText(file);
+            e.target.value = '';
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+        });
+	})();
+    </script>
+</body>
+</html>
