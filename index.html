@@ -17,7 +17,7 @@
         ===================================================== */
         body {
             font-family: 'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
-            background-color: #f8fafc;
+            background-color: #ffffff;
             height: 100vh;
             overflow: hidden;
             margin: 0;
@@ -179,6 +179,19 @@
             transform: scale(0.98);
         }
 
+        /* シャッフル */
+        #btnShuffle {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0; /* border-slate-200 */
+            color: #64748b; /* text-slate-500 */
+            margin-bottom: 0.75rem;
+        }
+
+        #btnShuffle:hover {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+
         /* トーナメント生成ボタン (indigo-600) */
         #btnGenerate {
             background-color: #4f46e5; /* indigo-600 */
@@ -208,12 +221,12 @@
         .system-logic-container {
             margin-top: 1rem;
             border-top: 1px solid #f1f5f9; /* border-slate-100 */
-            padding-top: 0.25rem;
+            padding-top: 1rem;
         }
 
         .system-logic-title {
             margin: 0 0 0.75rem;
-            font-size: 10px;
+            font-size: 0.8rem;
             font-weight: 700;
             color: #94a3b8; /* text-slate-400 */
             text-transform: uppercase;
@@ -255,17 +268,7 @@
 
         .dot-orange {
             background-color: #fb923c; /* bg-orange-400 */
-        }
-        
-        .bg-pattern {
-            position: absolute;
-            inset: 0;
-            opacity: 0.1;
-            pointer-events: none;
-            background-image: radial-gradient(#475569 1px, transparent 1px);
-            background-size: 24px 24px;
-        }
-        
+        }        
         
         #emptyState {
             position: absolute;
@@ -277,20 +280,7 @@
             color: #94a3b8; /* text-slate-400 */
             z-index: 0;
         }
-        
-        .emptyState-icon {
-          width: 8rem;
-          height: 8rem;
-          background-color: #ffffff;      /* bg-white */
-          border-radius: 1rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-          margin-bottom: 1.5rem;
-          border: 1px solid #f1f5f9;      /* border border-slate-100 */
-        }
-        
+                
         .hidden {
             display: none !important;
         }
@@ -330,7 +320,7 @@
         .checkbox-text { margin-left: 0.5rem; color: #374151; }
         .status-icon { flex-shrink: 0; margin-top: 1px; }
         .memo-block { margin-top: 0.5rem; }
-        .main-area { flex: 1 1 0%; background-color: #f8fafc; position: relative; overflow: hidden; }
+        .main-area { flex: 1 1 0%; position: relative; overflow: hidden; }
         .empty-state-title { font-size: 1.125rem; }
         .empty-state-subtitle { font-size: 0.875rem; margin-top: 0.5rem; }
 
@@ -339,14 +329,12 @@
         .player-name-row { display: flex; align-items: center; }
         .player-name-wrap { overflow: hidden; margin-right: 6px; }
         .player-name { font-weight: 700; font-size: 0.875rem; }
-        .original-name { font-weight: 400; font-size: 0.6rem; }
         .player-actions { display: flex; align-items: center; }
         .player-actions .edit-btn { margin-left: 8px; }
         .winner-mark { margin-left: 8px; }
         .winner-mark.is-winner { color: #22c55e; }
         .winner-mark.is-pending { color: #cbd5e1; }
         .bye-name { flex: 1; }
-        .bye-item-card .edit-btn { margin-left: 8px; padding: 4px; }
 
         /* =====================================================
            Bracket Layout
@@ -358,6 +346,7 @@
             padding: 30px;
             height: 100%;
             overflow-y: auto;
+            box-sizing: border-box;
         }
 
         /* 各ラウンド */
@@ -398,8 +387,6 @@
             background: #ffffff;
             border-radius: 12px;
             border: 1px solid #e2e8f0;
-            position: relative;
-            z-index: 10;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow:
                 0 2px 4px rgba(0,0,0,0.05),
@@ -478,7 +465,7 @@
             border-radius: 0 0 12px 12px;
         }
 
-        .player-slot:hover:not(.empty):not(.bye) {
+        .player-slot:hover:not(.empty) {
             background-color: #f8fafc;
         }
 
@@ -513,6 +500,8 @@
             background-color:transparent;
         }
         .bye-item-card .edit-btn {
+            margin-left: 8px;
+            padding: 4px;
             opacity: 0.3;
         }
         .player-slot:hover .edit-btn, .bye-item-card:hover .edit-btn {
@@ -815,7 +804,6 @@
                     <div class="form-block">
                         <label class="field-label">
                             <span class="field-label-main">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                                 参加者リスト
                             </span>
                             <span id="countBadge">0名</span>
@@ -824,17 +812,15 @@
                             placeholder="一行に一人ずつ名前を入力&#10;Aさん&#10;Bさん&#10;Cさん..."></textarea>
                     </div>
                     
-                    <div class="form-block">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="isShuffle">
-                            <span class="checkbox-text">シャッフル</span>
-                        </label>
-                    </div>
-                    
                     <div id="statusMessage" class="hidden">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="status-icon"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                         <span id="statusText"></span>
                     </div>
+
+                    <button id="btnShuffle" class="side-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shuffle-icon lucide-shuffle"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
+                        シャッフル
+                    </button>
 
                     <button id="btnGenerate" class="side-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -850,7 +836,7 @@
                     </div>
 
                     <div class="system-logic-container">
-                        <h4 class="system-logic-title">SYSTEM</h4>
+                        <h4 class="system-logic-title">主な機能と使い方</h4>
                         <ul class="system-logic-list">
                             <li class="logic-item">
                                 <span class="dot dot-slate"></span>
@@ -862,6 +848,10 @@
                             </li>
                             <li class="logic-item">
                                 <span class="dot dot-slate"></span>
+                                <span>マッチごとににメモ入力が可能</span>
+                            </li>
+                            <li class="logic-item">
+                                <span class="dot dot-slate"></span>
                                 <span>ローカルストレージに自動保存</span>
                             </li>
                             <li class="logic-item">
@@ -869,16 +859,8 @@
                                 <span>ファイル保存・読み込み可能</span>
                             </li>
                             <li class="logic-item">
-                                <span class="dot dot-slate"></span>
-                                <span>2人対戦を完全排除 (3人1組)</span>
-                            </li>
-                            <li class="logic-item">
                                 <span class="dot dot-indigo"></span>
                                 <span>偶数時は「分身」で奇数化</span>
-                            </li>
-                            <li class="logic-item">
-                                <span class="dot dot-slate"></span>
-                                <span>2ラウンド目に3のべき乗(3,9,27...)へ自動調整</span>
                             </li>
                         </ul>
                     </div>
@@ -888,19 +870,9 @@
 
             <!-- Main Area -->
             <main class="main-area">
-                <!-- Background Pattern -->
-                <div class="bg-pattern"></div>
 
                 <!-- Empty State -->
                 <div id="emptyState">
-                    <div class="emptyState-icon">
-                        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-slate-200">
-                            <path d="M16 21V19C16 17.9 15.1 17 14 17H5C3.9 17 3 17.9 3 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <circle cx="9.5" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M22 21V19C22 17.9 21.1 17 20 17H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M16 3.13C16.8604 3.35031 17.623 3.81886 18.2155 4.49256C18.808 5.16626 19.2117 6.02409 19.3896 6.98619C19.5675 7.94828 19.5139 8.98455 19.2339 9.99863C18.954 11.0127 18.4566 11.9723 17.787 12.788" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
                     <div class="empty-state-title text-slate-500">参加者を入力して生成ボタンを押してください</div>
                     <div class="empty-state-subtitle">最低3名からトーナメントを作成できます</div>
                 </div>
@@ -923,6 +895,7 @@
             input: document.getElementById('inputNames'),
             inputMemo: document.getElementById('memo'),
             countBadge: document.getElementById('countBadge'),
+            btnShuffle: document.getElementById('btnShuffle'),
             btnGenerate: document.getElementById('btnGenerate'),
             btnClear: document.getElementById('btnClear'),
             container: document.getElementById('bracketContainer'),
@@ -930,8 +903,7 @@
             statusMsg: document.getElementById('statusMessage'),
             statusText: document.getElementById('statusText'),
             btnSave: document.getElementById('btnSave'),
-            fileInput: document.getElementById('fileInput'),
-            isShuffle: document.getElementById('isShuffle')
+            fileInput: document.getElementById('fileInput')
         };
 
         // --- Utils ---
@@ -943,7 +915,10 @@
             }
             return shuffled;
         }
-        
+        function getNames() {
+            return els.input.value.split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
+        }
+
         const sanitize = (str) => {
             if (!str) return '';
             return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/`/g, '&#x60;');
@@ -974,7 +949,6 @@
             }));
 
             // シャッフル
-            if (els.isShuffle.checked) players = shuffle(players);
             const nameLines = players.map(item => item.originalName).join("\n");
             const memo = els.inputMemo.value;
             // 1. 偶数なら分身を作成して奇数にする
@@ -1344,8 +1318,8 @@
                             if (p.isSubstitute) tags += `<span class="tag tag-sub">変更</span>`;
                             if (p.isClone) tags += `<span class="tag tag-clone">分身</span>`;
                             let nameColor = p.isSubstitute ? 'text-orange-600' : (p.isClone ? 'text-violet-700' : 'text-slate-700');
-                            let origName = p.isSubstitute ? `<div class="truncate text-slate-500 original-name">${sanitize(p.originalName)}</div>` : "";
-                            nameHtml = `<div class="player-name-row"><div class="player-name-wrap"><div class="truncate ${nameColor} player-name">${sanitize(p.name)}</div>${origName}</div>${tags}</div>`;
+                            let origName = p.isSubstitute ? ` title="${sanitize(p.originalName)}"` : "";
+                            nameHtml = `<div class="player-name-row"><div class="player-name-wrap"><div class="truncate ${nameColor} player-name"${origName}>${sanitize(p.name)}</div></div>${tags}</div>`;
                         }
 
                         let rightAction = '';
@@ -1410,10 +1384,10 @@
                         let tags = '';
                         if (p.isSubstitute) tags += `<span class="tag tag-sub">変更</span>`;
                         if (p.isClone) tags += `<span class="tag tag-clone">分身</span>`;
-                        let origName = p.isSubstitute ? `<span class="text-slate-500 original-name">${sanitize(p.originalName)}</span>` : "";
+                        let origName = p.isSubstitute ? ` title="${sanitize(p.originalName)}"` : "";
                         
                         byeRow.innerHTML = `
-                            <span class="bye-name">${sanitize(p.name)} ${origName + tags}</span>
+                            <span class="bye-name"${origName}>${sanitize(p.name)} ${tags}</span>
                             <button type="button" class="edit-btn"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
                         `;
                         
@@ -1469,12 +1443,12 @@
         // --- Event Listeners & State Management ---
 
         els.input.addEventListener('input', () => {
-            const lines = els.input.value.split('\n').filter(l => l.trim());
+            const lines = getNames();
             els.countBadge.textContent = `${lines.length}名`;
         });
 
         els.btnGenerate.addEventListener('click', () => {
-            const lines = els.input.value.split('\n').map(l => l.trim()).filter(l => l);
+            const lines = getNames();
             if (lines.length < 3) {
                 alert('最低3名の参加者が必要です');
                 return;
@@ -1593,6 +1567,7 @@
         function enableSaveBtn() {
             els.btnSave.disabled = false;
         }
+        els.btnShuffle.addEventListener("click", () => { els.input.value = shuffle(getNames()).join("\n"); });
 
         els.btnClear.addEventListener('click', () => {
             if(confirm('全てのデータをクリアしますか？')) {
